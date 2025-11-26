@@ -25,6 +25,30 @@ private:
             }
         }
     }
+    static void devideTheMatrixIntoQuadrants(Matrix const& source, Matrix& A11, Matrix& A12, Matrix& A21, Matrix& A22) {
+        int newSize = source.rows / 2;
+        for (int i = 0; i < newSize; i++) {
+            for (int j = 0; j < newSize; j++) {
+                A11.data[i][j] = source.data[i][j];
+                A12.data[i][j] = source.data[i][j + newSize];
+                A21.data[i][j] = source.data[i + newSize][j];
+                A22.data[i][j] = source.data[i + newSize][j + newSize];
+            }
+        }
+    }
+    static Matrix combineQuadrants(Matrix const& C11, Matrix const& C12, Matrix const& C21, Matrix const& C22) {
+        int newSize = C11.rows;
+        Matrix res(newSize * 2, newSize * 2);
+        for (int i = 0; i < newSize; i++) {
+            for (int j = 0; j < newSize; j++) {
+                res.data[i][j] = C11.data[i][j];
+                res.data[i][j + newSize] = C12.data[i][j];
+                res.data[i + newSize][j] = C21.data[i][j];
+                res.data[i + newSize][j + newSize] = C22.data[i][j];
+            }
+        }
+        return res;
+    }
 public:
     // Constructors
     Matrix(int const& rows, int const& cols) {
@@ -228,6 +252,34 @@ public:
             }
         }
         return res;
+    }
+    // Strassen Multiplication (for square matrices of size 2^n)
+    static Matrix strassenMultiply(Matrix const& first, Matrix const& second) {
+        if (first.rows != first.cols || second.rows != second.cols || first.rows != second.rows){
+            throw invalid_argument("Strassen requires square matrices of same size.");
+        }
+        if (first.rows == 1) {
+            Matrix res(1, 1);
+            res.data[0][0] = first.data[0][0] * second.data[0][0];
+            return res;
+        }
+        int k = first.rows / 2;
+        Matrix A11(k, k), A12(k, k), A21(k, k), A22(k, k);
+        devideTheMatrixIntoQuadrants(first, A11, A12, A21, A22);
+        Matrix B11(k, k), B12(k, k), B21(k, k), B22(k, k);
+        devideTheMatrixIntoQuadrants(second, B11, B12, B21, B22);
+        Matrix P = strassenMultiply(A11 + A22, B11 + B22);
+        Matrix Q = strassenMultiply(A21 + A22, B11);
+        Matrix R = strassenMultiply(A11, B12 - B22);
+        Matrix S = strassenMultiply(A22, B21 - B11);
+        Matrix Tm = strassenMultiply(A11 + A12, B22);
+        Matrix U = strassenMultiply(A21 - A11, B11 + B12);
+        Matrix V = strassenMultiply(A12 - A22, B21 + B22);
+        Matrix C11 = P + S - Tm + V;
+        Matrix C12 = R + Tm;
+        Matrix C21 = Q + S;
+        Matrix C22 = P + R - Q + U;
+        return combineQuadrants(C11, C12, C21, C22);
     }
     Matrix operator*=(Matrix const& obj) {
         if (cols != obj.rows) {

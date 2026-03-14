@@ -5,6 +5,7 @@
 #include <string>
 #include <cmath>
 #include <iomanip>
+#include <mpi.h>
 
 using namespace std;
 

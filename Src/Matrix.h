@@ -246,8 +246,8 @@ public:
         }
         Matrix res(rows, obj.cols);
         for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < obj.cols; j++) {
-                for (int k = 0; k < cols; k++) {
+            for (int k = 0; k < cols; k++) {
+                for (int j = 0; j < obj.cols; j++) {
                     res.data[i][j] += data[i][k] * obj.data[k][j];
                 }
             }

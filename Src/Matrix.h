@@ -256,7 +256,7 @@ public:
     }
     // Strassen Multiplication (for square matrices of size 2^n)
     static Matrix strassenMultiply(Matrix const& first, Matrix const& second) {
-        if (first.rows != first.cols || second.rows != second.cols || first.rows != second.rows){
+        if (!first.isSquare() || !second.isSquare() || first.canOperate(second) == false) {
             throw invalid_argument("Strassen requires square matrices of same size.");
         }
         if (first.rows == 1) {

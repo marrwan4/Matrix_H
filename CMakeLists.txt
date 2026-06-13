@@ -1,13 +1,38 @@
-cmake_minimum_required(VERSION 3.10)
-project(Matrix_H)
+cmake_minimum_required(VERSION 3.14)
+project(MatrixLib VERSION 1.0.0 LANGUAGES CXX)
 
-# Manually point CMake to the MS-MPI environment variables
-set(MPI_C_HEADER_DIR "$ENV{MSMPI_INC}")
-set(MPI_CXX_HEADER_DIR "$ENV{MSMPI_INC}")
-set(MPI_C_LIBRARIES "$ENV{MSMPI_LIB64}/msmpi.lib")
-set(MPI_CXX_LIBRARIES "$ENV{MSMPI_LIB64}/msmpi.lib")
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(MPI REQUIRED)
+# 1. Define the core template library (Header-Only)
+add_library(matrix_lib INTERFACE)
 
-add_executable(Matrix_H Src/Matrix.h)
-target_link_libraries(Matrix_H PRIVATE MPI::MPI_CXX)
+# 2. Set include directory paths
+target_include_directories(matrix_lib INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Src>
+)
+
+# 3. Optional OpenMP detection
+find_package(OpenMP)
+if(OpenMP_FOUND)
+    target_link_libraries(matrix_lib INTERFACE OpenMP::OpenMP_CXX)
+    target_compile_definitions(matrix_lib INTERFACE USE_OPENMP)
+endif()
+
+# 4. Optional MPI detection (Graceful fallback if missing)
+find_package(MPI)
+if(MPI_FOUND)
+    target_link_libraries(matrix_lib INTERFACE MPI::MPI_CXX)
+    target_compile_definitions(matrix_lib INTERFACE USE_MPI)
+else()
+    # If MS-MPI wasn't auto-found but variables exist, manual fallback here
+    if(DEFINED ENV{MSMPI_INC})
+        target_include_directories(matrix_lib INTERFACE $ENV{MSMPI_INC})
+        target_link_libraries(matrix_lib INTERFACE $ENV{MSMPI_LIB64}/msmpi.lib)
+        target_compile_definitions(matrix_lib INTERFACE USE_MPI)
+    endif()
+endif()
+
+# 5. The Test Runner Application
+add_executable(MatrixProgram Src/MatrixProgram.cpp)
+target_link_libraries(MatrixProgram PRIVATE matrix_lib)

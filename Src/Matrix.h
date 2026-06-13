@@ -5,7 +5,10 @@
 #include <string>
 #include <cmath>
 #include <iomanip>
-#include <mpi.h>
+
+#ifdef USE_MPI
+    #include <mpi.h>
+#endif
 
 using namespace std;
 
